@@ -3,13 +3,22 @@ const Berita = require('../models/beritaModel');
 // @desc    Mengambil semua berita dari database
 // @route   GET /api/berita
 const getSemuaBerita = async (req, res) => {
-	console.log('Mencoba mengambil semua berita...'); // LOG 1
 	try {
-		const semuaBerita = await Berita.find({}).sort({ tanggal_terbit: -1 });
-		console.log('Berhasil menemukan data berita.'); // LOG 2
+		// Cek apakah ada query 'limit' di URL
+		const limit = parseInt(req.query.limit) || 0;
+
+		// Buat query dasar
+		let query = Berita.find({}).sort({ tanggal_terbit: -1 });
+
+		// Jika ada limit, tambahkan ke query
+		if (limit > 0) {
+			query = query.limit(limit);
+		}
+
+		const semuaBerita = await query.exec(); // Jalankan query
 		res.json(semuaBerita);
 	} catch (error) {
-		console.error('ERROR saat getSemuaBerita:', error); // LOG ERROR
+		console.error(error);
 		res.status(500).json({ message: 'Terjadi kesalahan pada server' });
 	}
 };
