@@ -1,26 +1,37 @@
 const express = require('express');
-const path = require('path');
+const path = require('path'); // Diperlukan untuk menyajikan gambar
 const connectDB = require('./config/db');
-const cors = require('cors'); // 1. Impor cors
-const beritaRoutes = require('./routes/beritaRoutes');
+const cors = require('cors');
+require('dotenv').config();
 
+// Impor semua file rute
+const beritaRoutes = require('./routes/beritaRoutes');
+const profilRoutes = require('./routes/profilRoutes');
+
+// Hubungkan ke Database
 connectDB();
+
 const app = express();
 
-// 2. Gunakan middleware cors agar frontend bisa mengakses API ini
-app.use(cors());
+// --- Middleware ---
+app.use(cors()); // Mengizinkan akses dari frontend
+app.use(express.json()); // Agar bisa membaca body JSON dari request
 
-const PORT = 5000;
-app.use(express.json());
-
+// Middleware untuk menyajikan file statis dari folder 'uploads'
+// Ini adalah baris yang hilang di instruksi saya sebelumnya
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
+// --- Rute Dasar ---
 app.get('/', (req, res) => {
 	res.send('API berjalan...');
 });
 
+// --- Rute API ---
 app.use('/api/berita', beritaRoutes);
+app.use('/api/profil', profilRoutes);
 
+// --- Jalankan Server ---
+const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
 	console.log(`Server berjalan di port ${PORT}`);
 });
