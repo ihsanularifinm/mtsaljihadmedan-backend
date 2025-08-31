@@ -8,6 +8,7 @@ require('dotenv').config();
 // Impor semua file rute
 const beritaRoutes = require('./routes/beritaRoutes');
 const profilRoutes = require('./routes/profilRoutes');
+const akademikRoutes = require('./routes/akademikRoutes');
 
 // Hubungkan ke Database
 connectDB();
@@ -38,4 +39,7 @@ app.listen(PORT, () => {
 });
 
 app.use('/api/profil', profilRoutes);
-app.use('/api/galeri', galeriRoutes); // Daftarkan rute galeri
+app.use('/api/galeri', galeriRoutes);
+
+app.use('/api/galeri', galeriRoutes);
+app.use('/api/akademik', akademikRoutes);
