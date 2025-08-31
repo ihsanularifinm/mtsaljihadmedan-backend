@@ -2,6 +2,7 @@ const express = require('express');
 const path = require('path'); // Diperlukan untuk menyajikan gambar
 const connectDB = require('./config/db');
 const cors = require('cors');
+const galeriRoutes = require('./routes/galeriRoutes');
 require('dotenv').config();
 
 // Impor semua file rute
@@ -35,3 +36,6 @@ const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
 	console.log(`Server berjalan di port ${PORT}`);
 });
+
+app.use('/api/profil', profilRoutes);
+app.use('/api/galeri', galeriRoutes); // Daftarkan rute galeri
