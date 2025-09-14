@@ -34,7 +34,6 @@ app.get('/', (req, res) => {
 app.use('/api/berita', beritaRoutes);
 app.use('/api/profil', profilRoutes);
 app.use('/api/galeri', galeriRoutes);
-app.use('/api/galeri', galeriRoutes);
 app.use('/api/akademik', akademikRoutes);
 app.use('/api/pendaftar', pendaftarRoutes);
 app.use('/api/pesan', pesanRoutes);
