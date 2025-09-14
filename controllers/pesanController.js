@@ -1,10 +1,21 @@
 const Pesan = require('../models/pesanModel');
+const axios = require('axios');
 
-// @desc    Menyimpan pesan baru dari form kontak
-// @route   POST /api/pesan
 const kirimPesan = async (req, res) => {
 	try {
-		const { nama_lengkap, email, subjek, isi_pesan } = req.body;
+		const { nama_lengkap, email, subjek, isi_pesan, recaptchaToken } = req.body;
+
+		// --- VERIFIKASI RECAPTCHA DIMULAI ---
+		if (!recaptchaToken) {
+			return res.status(400).json({ message: 'Verifikasi reCAPTCHA diperlukan.' });
+		}
+		const secretKey = process.env.RECAPTCHA_SECRET_KEY;
+		const verificationURL = `https://www.google.com/recaptcha/api/siteverify?secret=${secretKey}&response=${recaptchaToken}`;
+		const { data } = await axios.post(verificationURL);
+		if (!data.success) {
+			return res.status(400).json({ message: 'Verifikasi reCAPTCHA gagal. Coba lagi.' });
+		}
+		// --- VERIFIKASI RECAPTCHA SELESAI ---
 
 		if (!nama_lengkap || !email || !subjek || !isi_pesan) {
 			return res.status(400).json({ message: 'Harap isi semua kolom.' });

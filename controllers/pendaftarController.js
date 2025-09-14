@@ -1,10 +1,24 @@
 const Pendaftar = require('../models/pendaftarModel');
+const axios = require('axios');
 
-// @desc    Menambah pendaftar baru
-// @route   POST /api/pendaftar
 const tambahPendaftar = async (req, res) => {
 	try {
-		const { nama_lengkap, nisn, asal_sekolah, nama_wali, kontak_wali } = req.body;
+		const { nama_lengkap, nisn, asal_sekolah, nama_wali, kontak_wali, recaptchaToken } = req.body;
+
+		// --- VERIFIKASI RECAPTCHA DIMULAI ---
+		if (!recaptchaToken) {
+			return res.status(400).json({ message: 'Verifikasi reCAPTCHA diperlukan.' });
+		}
+
+		const secretKey = process.env.RECAPTCHA_SECRET_KEY;
+		const verificationURL = `https://www.google.com/recaptcha/api/siteverify?secret=${secretKey}&response=${recaptchaToken}`;
+
+		const { data } = await axios.post(verificationURL);
+
+		if (!data.success) {
+			return res.status(400).json({ message: 'Verifikasi reCAPTCHA gagal. Coba lagi.' });
+		}
+		// --- VERIFIKASI RECAPTCHA SELESAI ---
 
 		// Validasi input dasar
 		if (!nama_lengkap || !nisn || !asal_sekolah || !nama_wali || !kontak_wali) {
