@@ -1,51 +1,50 @@
 const User = require('../models/userModel');
 const generateToken = require('../utils/generateToken');
+const asyncHandler = require('express-async-handler');
 
-const registerUser = async (req, res) => {
-	try {
-		const { nama, username, password } = req.body;
-		const userExists = await User.findOne({ username });
+// @desc    Mendaftarkan user admin baru
+// @route   POST /api/users/register
+const registerUser = asyncHandler(async (req, res) => {
+	const { nama, username, password } = req.body;
+	const userExists = await User.findOne({ username });
 
-		if (userExists) {
-			return res.status(400).json({ message: 'Username sudah digunakan' });
-		}
-		const user = await User.create({ nama, username, password });
-
-		if (user) {
-			res.status(201).json({
-				_id: user._id,
-				nama: user.nama,
-				username: user.username,
-				token: generateToken(user._id),
-			});
-		} else {
-			res.status(400).json({ message: 'Data user tidak valid' });
-		}
-	} catch (error) {
-		console.error('ERROR saat registerUser:', error);
-		res.status(500).json({ message: 'Server Error' });
+	if (userExists) {
+		res.status(400);
+		throw new Error('Username sudah digunakan');
 	}
-};
 
-const loginUser = async (req, res) => {
-	try {
-		const { username, password } = req.body;
-		const user = await User.findOne({ username });
+	const user = await User.create({ nama, username, password });
 
-		if (user && (await user.matchPassword(password))) {
-			res.json({
-				_id: user._id,
-				nama: user.nama,
-				username: user.username,
-				token: generateToken(user._id),
-			});
-		} else {
-			res.status(401).json({ message: 'Username atau password salah' });
-		}
-	} catch (error) {
-		console.error('!!! TERJADI ERROR FATAL SAAT LOGIN:', error);
-		res.status(500).json({ message: 'Server Error' });
+	if (user) {
+		res.status(201).json({
+			_id: user._id,
+			nama: user.nama,
+			username: user.username,
+			token: generateToken(user._id),
+		});
+	} else {
+		res.status(400);
+		throw new Error('Data user tidak valid');
 	}
-};
+});
+
+// @desc    Login & mendapatkan token
+// @route   POST /api/users/login
+const loginUser = asyncHandler(async (req, res) => {
+	const { username, password } = req.body;
+	const user = await User.findOne({ username });
+
+	if (user && (await user.matchPassword(password))) {
+		res.json({
+			_id: user._id,
+			nama: user.nama,
+			username: user.username,
+			token: generateToken(user._id),
+		});
+	} else {
+		res.status(401);
+		throw new Error('Username atau password salah');
+	}
+});
 
 module.exports = { registerUser, loginUser };

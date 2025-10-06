@@ -1,43 +1,49 @@
 const Pesan = require('../models/pesanModel');
 const axios = require('axios');
+const sendEmail = require('../utils/sendEmail');
+const asyncHandler = require('express-async-handler');
 
-const kirimPesan = async (req, res) => {
-	try {
-		const { nama_lengkap, email, subjek, isi_pesan, recaptchaToken } = req.body;
+const kirimPesan = asyncHandler(async (req, res) => {
+	const { nama_lengkap, email, subjek, isi_pesan, recaptchaToken } = req.body;
 
-		// --- VERIFIKASI RECAPTCHA DIMULAI ---
-		if (!recaptchaToken) {
-			return res.status(400).json({ message: 'Verifikasi reCAPTCHA diperlukan.' });
-		}
-		const secretKey = process.env.RECAPTCHA_SECRET_KEY;
-		const verificationURL = `https://www.google.com/recaptcha/api/siteverify?secret=${secretKey}&response=${recaptchaToken}`;
-		const { data } = await axios.post(verificationURL);
-		if (!data.success) {
-			return res.status(400).json({ message: 'Verifikasi reCAPTCHA gagal. Coba lagi.' });
-		}
-		// --- VERIFIKASI RECAPTCHA SELESAI ---
-
-		if (!nama_lengkap || !email || !subjek || !isi_pesan) {
-			return res.status(400).json({ message: 'Harap isi semua kolom.' });
-		}
-
-		const pesanBaru = new Pesan({ nama_lengkap, email, subjek, isi_pesan });
-		await pesanBaru.save();
-		res.status(201).json({ message: 'Pesan Anda berhasil terkirim! Terima kasih.' });
-	} catch (error) {
-		res.status(500).json({ message: 'Terjadi kesalahan pada server' });
+	// --- Verifikasi reCAPTCHA ---
+	const secretKey = process.env.RECAPTCHA_SECRET_KEY;
+	const verificationURL = `https://www.google.com/recaptcha/api/siteverify?secret=${secretKey}&response=${recaptchaToken}`;
+	const { data: recaptchaResult } = await axios.post(verificationURL);
+	if (!recaptchaResult.success) {
+		res.status(400);
+		throw new Error('Verifikasi reCAPTCHA gagal. Coba lagi.');
 	}
-};
 
-// @desc    Mengambil semua pesan (untuk admin)
-// @route   GET /api/pesan
-const getSemuaPesan = async (req, res) => {
+	const pesanBaru = new Pesan({ nama_lengkap, email, subjek, isi_pesan });
+	await pesanBaru.save();
+
+	// --- KIRIM EMAIL ---
 	try {
-		const semuaPesan = await Pesan.find({}).sort({ tanggal_kirim: -1 });
-		res.json(semuaPesan);
-	} catch (error) {
-		res.status(500).json({ message: 'Terjadi kesalahan pada server' });
+		// Kirim Notifikasi ke Admin
+		const emailAdminHtml = `<h1>Pesan Baru dari ${nama_lengkap}</h1>...`; // Konten email admin
+		await sendEmail({
+			to: process.env.EMAIL_ADMIN,
+			subject: `Pesan Baru: ${subjek}`,
+			html: emailAdminHtml,
+		});
+		// Kirim Konfirmasi ke Pengguna
+		const emailPenggunaHtml = `<h1>Terima Kasih Telah Menghubungi Kami</h1>...`; // Konten email pengguna
+		await sendEmail({
+			to: email,
+			subject: 'Konfirmasi Penerimaan Pesan',
+			html: emailPenggunaHtml,
+		});
+	} catch (emailError) {
+		console.error('Gagal mengirim email notifikasi kontak:', emailError);
 	}
-};
+
+	res.status(201).json({ message: 'Pesan Anda berhasil terkirim! Terima kasih.' });
+});
+
+const getSemuaPesan = asyncHandler(async (req, res) => {
+	const semuaPesan = await Pesan.find({}).sort({ tanggal_kirim: -1 });
+	res.json(semuaPesan);
+});
 
 module.exports = { kirimPesan, getSemuaPesan };

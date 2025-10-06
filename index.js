@@ -3,6 +3,8 @@ const path = require('path');
 const connectDB = require('./config/db');
 const cors = require('cors');
 require('dotenv').config();
+const { swaggerUi, specs } = require('./config/swagger');
+const { notFound, errorHandler } = require('./middleware/errorMiddleware');
 
 // Impor semua file rute
 const beritaRoutes = require('./routes/beritaRoutes');
@@ -38,6 +40,13 @@ app.use('/api/akademik', akademikRoutes);
 app.use('/api/pendaftar', pendaftarRoutes);
 app.use('/api/pesan', pesanRoutes);
 app.use('/api/users', userRoutes);
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(specs));
+
+// --- PENANGANAN ERROR ---
+// Gunakan middleware 404
+app.use(notFound);
+// Gunakan middleware error utama
+app.use(errorHandler);
 
 // --- Jalankan Server ---
 const PORT = process.env.PORT || 5000;
